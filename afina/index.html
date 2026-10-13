@@ -6,17 +6,17 @@
 <style>
 /* Layout: una pantalla, una letra y un punto que busca el centro; el fondo se templa al afinar */
 :root{
-  --far:#ECEAF3; --near:#F7E4D6; --ink:#2A2530; --soft:#8A8292; --line:#2A25301F; --glow:#E39E7E;
+  --far:#ECEAF3; --near:#F7E4D6; --ink:#2A2530; --soft:#8A8292; --line:#2A25301F; --glow:#E39E7E; --shade:#2A253029;
   --font:"Nunito", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --far:#16141B; --near:#2C201C; --ink:#F2EDF4; --soft:#8E8698; --line:#F2EDF41F; --glow:#F2AE8F;
+    --far:#16141B; --near:#2C201C; --ink:#F2EDF4; --soft:#8E8698; --line:#F2EDF41F; --glow:#F2AE8F; --shade:#00000080;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --far:#16141B; --near:#2C201C; --ink:#F2EDF4; --soft:#8E8698; --line:#F2EDF41F; --glow:#F2AE8F;
+  --far:#16141B; --near:#2C201C; --ink:#F2EDF4; --soft:#8E8698; --line:#F2EDF41F; --glow:#F2AE8F; --shade:#00000080;
   color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -33,6 +33,22 @@ body{
 }
 .app{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding-block:22px 26px;max-width:28rem;margin-inline:auto}
 .brand{margin:0;text-align:center;font-weight:600;font-size:.95rem;letter-spacing:.18em;color:var(--soft)}
+.top{position:relative;z-index:3;display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
+.icon-btn{width:40px;height:40px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--soft);display:grid;place-items:center;font:600 1.05rem/1 var(--font);cursor:pointer;transition:color .2s,border-color .2s}
+.icon-btn:active{color:var(--ink);border-color:var(--soft)}
+.icon-btn svg{width:17px;height:17px}
+.toast{position:absolute;left:50%;top:50px;transform:translateX(-50%);max-width:90vw;text-align:center;font-size:.88rem;color:var(--soft);opacity:0;transition:opacity .3s ease;pointer-events:none;overflow-wrap:anywhere}
+.toast.on{opacity:1}
+
+/* Hoja de información */
+.info{border:0;padding:28px 24px 22px;width:calc(100% - 32px);max-width:22rem;border-radius:28px;background:var(--far);color:var(--ink);font-family:var(--font);box-shadow:0 24px 70px var(--shade)}
+.info::backdrop{background:rgba(20,16,24,.28);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.info h2{margin:0 0 16px;font-weight:600;font-size:1.25rem}
+.info ol{margin:0;padding:0;list-style:none;counter-reset:paso;display:flex;flex-direction:column;gap:12px}
+.info li{counter-increment:paso;display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;line-height:1.45}
+.info li::before{content:counter(paso);color:var(--glow);font-weight:600}
+.info p{margin:16px 0 0;font-size:.92rem;line-height:1.45;color:var(--soft)}
+.info .close{display:block;width:100%;margin-top:22px;padding:13px;border:0;border-radius:999px;background:var(--ink);color:var(--far);font:600 1rem/1 var(--font);cursor:pointer}
 .stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:0}
 .letter{font-weight:300;font-size:clamp(7.5rem,38vw,12.5rem);line-height:1;min-height:1em;transition:color .4s ease,opacity .3s ease}
 .ord{font-size:.95rem;color:var(--soft);min-height:1.4em}
@@ -82,7 +98,14 @@ body{
 </style>
 
 <main class="app" id="app" data-state="start">
-  <p class="brand">afina</p>
+  <div class="top">
+    <button class="icon-btn" id="infoBtn" type="button" aria-label="Cómo funciona">i</button>
+    <p class="brand">afina</p>
+    <button class="icon-btn" id="shareBtn" type="button" aria-label="Compartir Afina">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12"></path></svg>
+    </button>
+    <span class="toast" id="toast" role="status"></span>
+  </div>
   <div class="stage">
     <div class="letter" id="letter" aria-live="polite"></div>
     <div class="ord" id="ord"></div>
@@ -95,6 +118,19 @@ body{
   </div>
   <button class="start" id="start" type="button" aria-label="Empezar a afinar"></button>
 </main>
+
+<dialog class="info" id="info" aria-labelledby="infoTitle">
+  <h2 id="infoTitle">cómo funciona</h2>
+  <ol>
+    <li><span>toca la pantalla y deja que use el micrófono.</span></li>
+    <li><span>toca una cuerda al aire, de una en una, y apaga las demás con la mano.</span></li>
+    <li><span>mira el punto. si se queda a la izquierda, tensa la clavija. si se va a la derecha, suéltala.</span></li>
+    <li><span>cuando llega al centro, todo se vuelve melocotón y suena una campanita. a por la siguiente.</span></li>
+  </ol>
+  <p>las letras de abajo son las seis cuerdas, de la más gruesa a la más fina: E A D G B E. se marcan al afinarlas.</p>
+  <p>el sonido se escucha en tu móvil y no se guarda ni se envía a ningún sitio.</p>
+  <button class="close" id="infoClose" type="button">vale</button>
+</dialog>
 
 <script>
 (function () {
@@ -259,6 +295,35 @@ body{
     idle();
     raf = requestAnimationFrame(loop);
   }
+
+  /* Información y compartir */
+  var SHARE_URL = "https://gorkagarriga.github.io/Afinador-guitarra/afina/";
+  var info = $("#info"), toastEl = $("#toast"), toastTimer = 0;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("on"); }, 2400);
+  }
+  function closeInfo() { if (info.close) info.close(); else info.removeAttribute("open"); }
+  $("#infoBtn").addEventListener("click", function () {
+    if (info.showModal) { try { info.showModal(); return; } catch (e) {} }
+    info.setAttribute("open", "");
+  });
+  $("#infoClose").addEventListener("click", closeInfo);
+  info.addEventListener("click", function (e) {
+    if (e.target !== info) return;
+    var r = info.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeInfo();
+  });
+  $("#shareBtn").addEventListener("click", async function () {
+    var data = { title: "Afina", text: "Un afinador de guitarra sencillito", url: SHARE_URL };
+    if (navigator.share) {
+      try { await navigator.share(data); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    try { await navigator.clipboard.writeText(SHARE_URL); toast("enlace copiado"); }
+    catch (e) { toast(SHARE_URL); }
+  });
 
   startBtn.addEventListener("click", start);
   again.addEventListener("click", function () { done.clear(); idle(); });
