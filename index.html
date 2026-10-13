@@ -1,0 +1,928 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Afinador gratuito para guitarra española: aguja con el micrófono, notas de referencia y metrónomo."><meta name="theme-color" content="#18120D"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Afinador de guitarra española</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;1,500&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: herramienta de bolsillo en una sola columna; la boca y la roseta de la guitarra hacen de dial */
+:root{
+  --bg:#EEF0EB; --surface:#FAFBF8; --ink:#1B1F1C; --muted:#59625B; --line:#D3D8D0;
+  --accent:#8B2B38; --on-accent:#FFFFFF;
+  --wood:#9C6A33; --cream:#F3ECDD; --top:#E6D7B8; --grain:rgba(120,85,35,.10);
+  --hole:#18120D; --hole-ink:#F3ECDD; --ok-hole:#72D6A0; --warn-hole:#F2BA5C;
+  --metal:#8A9093; --metal-2:#CDD1D3; --nylon:#C6B898;
+  --ok:#1F7A4A; --warn:#A35E0A;
+  --f-display:"Alegreya", Georgia, "Times New Roman", serif;
+  --f-body:"Alegreya Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111412; --surface:#191D1A; --ink:#E8EBE5; --muted:#98A29A; --line:#2B322D;
+    --accent:#D9707F; --on-accent:#1C0B0F;
+    --wood:#C4904F; --cream:#E9DFC9; --top:#3A281C; --grain:rgba(0,0,0,.22);
+    --hole:#0A0806; --hole-ink:#EDE4D2;
+    --metal:#9DA3A6; --metal-2:#5E6467; --nylon:#D8CFBE;
+    --ok:#57C487; --warn:#E3A447;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111412; --surface:#191D1A; --ink:#E8EBE5; --muted:#98A29A; --line:#2B322D;
+  --accent:#D9707F; --on-accent:#1C0B0F;
+  --wood:#C4904F; --cream:#E9DFC9; --top:#3A281C; --grain:rgba(0,0,0,.22);
+  --hole:#0A0806; --hole-ink:#EDE4D2;
+  --metal:#9DA3A6; --metal-2:#5E6467; --nylon:#D8CFBE;
+  --ok:#57C487; --warn:#E3A447;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--f-body); font-size:1.0625rem; line-height:1.5;
+  padding-inline:16px; padding-block:20px 56px;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.app{max-width:34rem;margin-inline:auto;display:flex;flex-direction:column;gap:32px}
+
+/* Cabecera */
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{margin:0;font:500 .72rem/1.2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(2.5rem,10vw,3.3rem);line-height:.95;letter-spacing:-.01em;text-wrap:balance}
+h1 span{display:block;margin-top:.18em;font-style:italic;font-weight:500;font-size:.52em;letter-spacing:0;color:var(--accent)}
+.lede{margin:0;color:var(--muted);max-width:38ch}
+h2{margin:0;font:700 1.4rem/1.2 var(--f-display);text-wrap:balance}
+
+/* Dial */
+.tuner{display:flex;flex-direction:column;align-items:center;gap:18px}
+.dial{
+  width:100%; border-radius:22px; padding:14px;
+  background:
+    repeating-linear-gradient(91deg,transparent 0 11px,var(--grain) 11px 12px,transparent 12px 19px,var(--grain) 19px 20px,transparent 20px 31px),
+    var(--top);
+  display:flex; justify-content:center;
+}
+#dial{width:100%;max-width:330px;height:auto;display:block}
+#dial .tile{stroke:var(--top);stroke-width:.7}
+#dial .ta{fill:var(--accent)}
+#dial .tw{fill:var(--wood)}
+#dial .tc{fill:var(--cream)}
+#dial .ring-line{fill:none;stroke:var(--wood);stroke-width:1.6}
+#dial .ring-line.thin{stroke-width:.8}
+#dial .hole{fill:var(--hole)}
+#dial .tick{stroke:var(--hole-ink);stroke-width:1.2;opacity:.42;stroke-linecap:round}
+#dial .tick.major{stroke-width:2.2;opacity:.9}
+#dial .zone{fill:none;stroke:var(--ok-hole);stroke-width:5;stroke-linecap:round;opacity:.28;transition:opacity .2s}
+#dial .sym{fill:var(--hole-ink);opacity:.6;font:500 19px var(--f-body)}
+#dial .needle-line{stroke:var(--hole-ink);stroke-width:2.6;stroke-linecap:round;transition:stroke .2s}
+#dial .pivot{fill:var(--accent)}
+#dial .note{fill:var(--hole-ink);font:700 54px var(--f-display);transition:fill .2s}
+#dial .sub{fill:var(--hole-ink);opacity:.7;font:400 14px var(--f-body)}
+#needle{transform-box:view-box;transform-origin:160px 160px;transition:transform .12s ease-out,opacity .3s}
+#dial[data-state="idle"] #needle,#dial[data-state="listening"] #needle{opacity:.35}
+#dial[data-state="tuned"] .zone{opacity:1}
+#dial[data-state="tuned"] .needle-line{stroke:var(--ok-hole)}
+#dial[data-state="tuned"] .note{fill:var(--ok-hole)}
+#dial[data-state="warn"] .needle-line{stroke:var(--warn-hole)}
+
+.readout{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;text-align:center}
+.readout div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.readout dt{font:500 .66rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.readout dd{margin:0;font:500 1rem/1.3 var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.status{text-align:center;display:flex;flex-direction:column;gap:4px;min-height:5.4em}
+.status-main{margin:0;font:700 1.75rem/1.1 var(--f-display);text-wrap:balance}
+.status-hint{margin:0 auto;color:var(--muted);max-width:34ch;text-wrap:balance}
+.status[data-tone="ok"] .status-main{color:var(--ok)}
+.status[data-tone="warn"] .status-main{color:var(--warn)}
+
+.mic{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 24px;border:0;border-radius:999px;
+  background:var(--accent);color:var(--on-accent);
+  font:700 1.02rem/1 var(--f-body);
+}
+.mic svg{width:18px;height:18px;flex:none}
+.mic .dot{display:none;width:10px;height:10px;border-radius:50%;background:currentColor}
+.mic[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.mic[aria-pressed="true"] svg{display:none}
+.mic[aria-pressed="true"] .dot{display:block;animation:pulse 1.2s ease-in-out infinite}
+.mic:disabled{background:var(--line);color:var(--muted)}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.mic-note{margin:0;font-size:.95rem;color:var(--muted);text-align:center;max-width:36ch}
+.meter-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.meter-label{font:500 .66rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.meter{width:min(240px,100%);height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter span{display:block;height:100%;width:0;background:var(--accent);transition:width .08s linear}
+
+/* Cuerdas */
+.strings-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.chip{
+  border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:7px 14px;font:500 .88rem/1 var(--f-body);
+}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.strings{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:14px}
+.str{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:0 2px 10px;min-width:0;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  transition:background .2s,border-color .2s;
+}
+.str .wire{display:block;width:var(--w,3px);height:42px;margin-bottom:7px;border-radius:0 0 2px 2px;background:var(--nylon)}
+.str.wound .wire{background:repeating-linear-gradient(180deg,var(--metal) 0 1.4px,var(--metal-2) 1.4px 2.6px)}
+.str .num{font:500 .7rem/1.2 var(--f-mono);color:var(--muted)}
+.str .nm{font:700 1.35rem/1.15 var(--f-display)}
+.str .hz{font:400 .68rem/1.2 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.str .done{
+  position:absolute;top:6px;right:5px;width:15px;height:15px;border-radius:50%;
+  display:grid;place-items:center;background:var(--ok);color:var(--bg);font:700 9px/1 var(--f-body);
+}
+.str[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.str.current{background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.str.playing .wire{animation:buzz .07s linear infinite}
+@keyframes buzz{0%,100%{transform:translateX(-1px)}50%{transform:translateX(1px)}}
+.progress{margin:10px 0 0;font:400 .8rem/1.3 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Ajustes */
+.settings{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;padding-block:14px;border-top:1px solid var(--line)}
+.row:last-child{border-bottom:1px solid var(--line)}
+.row-label{display:flex;flex-direction:column;min-width:0}
+.row-label strong{font-weight:700}
+.row-label small{color:var(--muted);font-size:.86rem}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 13px;border-radius:999px;font:500 .9rem/1 var(--f-body);color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.stepper{display:inline-flex;align-items:center;gap:10px}
+.stepper button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font:500 1.2rem/1 var(--f-mono)}
+.stepper output{min-width:5.2ch;text-align:center;font:500 1rem/1 var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* Ayuda */
+.help{display:flex;flex-direction:column;gap:14px}
+.steps{margin:0;padding:0;list-style:none;counter-reset:paso;display:flex;flex-direction:column;gap:12px}
+.steps li{counter-increment:paso;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:4px;max-width:62ch}
+.steps li::before{content:counter(paso);font:italic 500 1.5rem/1.1 var(--f-display);color:var(--accent)}
+.tips{display:flex;flex-direction:column;gap:10px}
+.tips p{margin:0;max-width:62ch}
+footer{margin:0;font-size:.85rem;color:var(--muted)}
+.str .sol{font:400 .8rem/1.1 var(--f-body);color:var(--muted)}
+.row-label small.warn{color:var(--warn);font-weight:500}
+.reset{margin-left:4px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font:500 .85rem/1 var(--f-mono)}
+
+/* Metrónomo */
+.metro-body{display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:14px}
+.metro-sub,.metro-hint{margin:0;color:var(--muted);font-size:.92rem}
+.metro-hint{text-align:center;max-width:36ch}
+.beats{display:flex;gap:12px;justify-content:center}
+.beats span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:700 1.25rem/1 var(--f-display);transition:background .05s,color .05s}
+.beats span.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.beats span.first.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.metro-controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:center}
+
+/* Chuleta de letras */
+.letters{overflow-x:auto}
+.letters table{border-collapse:collapse;width:100%;min-width:300px;text-align:center}
+.letters th,.letters td{border:1px solid var(--line);padding:6px 4px}
+.letters th{font:700 1.1rem/1.2 var(--f-display)}
+.letters td{color:var(--muted)}
+
+@media (prefers-reduced-motion: reduce){
+  #needle,.str,#dial .zone,#dial .note,#dial .needle-line{transition:none}
+  .str.playing .wire,.mic[aria-pressed="true"] .dot{animation:none}
+}
+</style>
+
+<main class="app">
+  <header>
+    <p class="eyebrow">Afinación estándar · La = <span id="a4Head">440</span> Hz</p>
+    <h1>Afinador <span>de guitarra española</span></h1>
+    <p class="lede">Las seis cuerdas, de la 1ª (la más fina) a la 6ª: E B G D A E, que son mi, si, sol, re, la, mi.</p>
+  </header>
+
+  <section class="tuner" aria-label="Afinador">
+    <div class="dial">
+      <svg id="dial" viewBox="0 0 320 320" role="img" aria-labelledby="dialTitle" data-state="idle">
+        <title id="dialTitle">Indicador de afinación</title>
+        <g id="rosette"></g>
+        <circle class="hole" cx="160" cy="160" r="110"></circle>
+        <g id="scale"></g>
+        <g id="needle">
+          <line class="needle-line" x1="160" y1="174" x2="160" y2="66"></line>
+          <circle class="pivot" cx="160" cy="160" r="7"></circle>
+        </g>
+        <text id="noteName" class="note" x="160" y="226" text-anchor="middle">♪</text>
+        <text id="noteSub" class="sub" x="160" y="252" text-anchor="middle">toca una cuerda</text>
+      </svg>
+    </div>
+
+    <dl class="readout">
+      <div><dt>Oyes</dt><dd id="rHz">—</dd></div>
+      <div><dt>Desvío</dt><dd id="rCents">—</dd></div>
+      <div><dt>Objetivo</dt><dd id="rTarget">—</dd></div>
+    </dl>
+
+    <div class="status" id="status" data-tone="neutral" aria-live="polite">
+      <p class="status-main" id="statusMain">Toca una cuerda</p>
+      <p class="status-hint" id="statusHint">Activa el micrófono para ver la aguja, o pulsa una cuerda de abajo para oír su nota.</p>
+    </div>
+
+    <button class="mic" id="micBtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+      <span class="dot" aria-hidden="true"></span>
+      <span id="micLabel">Activar micrófono</span>
+    </button>
+    <div class="meter-wrap" id="meterWrap">
+      <span class="meter-label" id="meterLabel">Micrófono apagado</span>
+      <div class="meter"><span id="meterFill"></span></div>
+    </div>
+    <p class="mic-note" id="micNote" hidden></p>
+  </section>
+
+  <section aria-labelledby="hStrings">
+    <div class="strings-head">
+      <h2 id="hStrings">Cuerdas</h2>
+      <button class="chip" id="autoBtn" type="button" aria-pressed="true">Detectar sola</button>
+    </div>
+    <div class="strings" id="strings"></div>
+    <p class="progress" id="progress">Afinadas: 0 de 6</p>
+  </section>
+
+  <section class="settings" aria-label="Ajustes">
+    <div class="row">
+      <div class="row-label"><strong>Nota de referencia</strong><small>Suena al pulsar una cuerda. Si no oyes nada, sube el volumen del móvil.</small></div>
+      <div class="seg" role="group" aria-label="Tipo de sonido">
+        <button type="button" id="sndPluck" aria-pressed="true">Pulsada</button>
+        <button type="button" id="sndSustain" aria-pressed="false">Continua</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row-label"><strong>Calibración</strong><small id="a4Small">Siempre a 440 Hz, como en clase</small></div>
+      <div class="stepper">
+        <button type="button" id="a4Down" aria-label="Bajar 1 Hz">−</button>
+        <output id="a4Out" aria-live="polite">440 Hz</output>
+        <button type="button" id="a4Up" aria-label="Subir 1 Hz">+</button>
+        <button type="button" class="reset" id="a4Reset" hidden>Volver a 440</button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hMetro">
+    <div class="strings-head">
+      <h2 id="hMetro">Metrónomo</h2>
+      <p class="metro-sub">4 tiempos · golpes por minuto</p>
+    </div>
+    <div class="metro-body">
+      <div class="beats" id="beats" aria-hidden="true"><span class="first">1</span><span>2</span><span>3</span><span>4</span></div>
+      <div class="metro-controls">
+        <div class="stepper">
+          <button type="button" id="bpmDown" aria-label="Más lento">−</button>
+          <output id="bpmOut" aria-live="polite">60</output>
+          <button type="button" id="bpmUp" aria-label="Más rápido">+</button>
+        </div>
+        <div class="seg" role="group" aria-label="Velocidades de clase">
+          <button type="button" data-bpm="60" aria-pressed="true">60</button>
+          <button type="button" data-bpm="80" aria-pressed="false">80</button>
+          <button type="button" data-bpm="90" aria-pressed="false">90</button>
+        </div>
+      </div>
+      <button class="mic" id="metroBtn" type="button" aria-pressed="false"><span class="dot" aria-hidden="true"></span><span id="metroLabel">Empezar</span></button>
+      <p class="metro-hint">Empieza a 60, un golpe por segundo, contando «1, 2, 3, 4» en voz alta. Sube a 80 o 90 solo cuando te salga limpio.</p>
+    </div>
+  </section>
+
+  <section class="help" aria-labelledby="hHelp">
+    <h2 id="hHelp">Cómo afinar</h2>
+    <ol class="steps">
+      <li><span><strong>Toca solo la cuerda que vas a afinar</strong>, al aire, y apaga las demás con la mano para que el afinador no se confunda.</span></li>
+      <li><span><strong>Mira la letra.</strong> Tiene que salir la de esa cuerda: 1ª E, 2ª B, 3ª G, 4ª D, 5ª A, 6ª E.</span></li>
+      <li><span><strong>Gira su clavija un poco y vuelve a tocar.</strong> Nota baja (aguja a la izquierda): tensa. Nota alta (aguja a la derecha): suelta. Como depende de cómo mires la guitarra, gira un poco y comprueba si la nota sube o baja.</span></li>
+      <li><span><strong>Letra correcta y aguja en el centro.</strong> Entonces está afinada. La letra sola no basta. Si te pasas, suelta un poco por debajo y vuelve a subir despacio.</span></li>
+    </ol>
+    <div class="letters">
+      <table>
+        <caption class="metro-sub" style="caption-side:top;text-align:left;padding-bottom:6px">Letras del afinador</caption>
+        <tr><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>A</th><th>B</th></tr>
+        <tr><td>do</td><td>re</td><td>mi</td><td>fa</td><td>sol</td><td>la</td><td>si</td></tr>
+      </table>
+    </div>
+    <div class="tips">
+      <p><strong>De oído.</strong> Pon la nota de referencia y toca tu cuerda a la vez. Si oyes un vaivén en el volumen, las notas no coinciden. Cuanto más lento es el vaivén, más cerca estás, y cuando desaparece la cuerda está afinada.</p>
+      <p><strong>¿Sin guitarra a mano?</strong> Para probar el micrófono, tararea una nota grave y sostenida, «mmm». La aguja irá a la cuerda más cercana. Los golpes y palmadas no tienen nota, así que solo mueven el medidor de nivel.</p>
+      <p><strong>Cuerdas nuevas.</strong> Se desafinan rápido porque tienen que coger tensión. Ténsalas poco a poco y revisa la afinación antes de cada práctica. Si una cuerda está muy floja, dale primero una tensión razonable para que el afinador la reconozca.</p>
+    </div>
+  </section>
+
+  <footer>El sonido del micrófono se analiza en tu propio dispositivo y no se envía a ningún sitio.</footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+
+  var STRINGS = [
+    { n: 6, name: "Mi",  letter: "E", midi: 40, w: 4.2, wound: true },
+    { n: 5, name: "La",  letter: "A", midi: 45, w: 3.5, wound: true },
+    { n: 4, name: "Re",  letter: "D", midi: 50, w: 3.0, wound: true },
+    { n: 3, name: "Sol", letter: "G", midi: 55, w: 4.0, wound: false },
+    { n: 2, name: "Si",  letter: "B", midi: 59, w: 3.2, wound: false },
+    { n: 1, name: "Mi",  letter: "E", midi: 64, w: 2.8, wound: false }
+  ];
+  var LET = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+  var SOL = ["do", "do♯", "re", "re♯", "mi", "fa", "fa♯", "sol", "sol♯", "la", "la♯", "si"];
+  // Camino de letras entre la nota que suena y la de la cuerda (solo naturales), como «C → D → E»
+  function letterPath(from, to) {
+    var out = [], step = to > from ? 1 : -1, m = from;
+    for (var guard = 0; guard < 40; guard++) {
+      var L = LET[((m % 12) + 12) % 12];
+      if ((m === from || m === to || L.length === 1) && out[out.length - 1] !== L) out.push(L);
+      if (m === to) break;
+      m += step;
+    }
+    if (out.length > 5) out = [out[0], out[1], "…", out[out.length - 1]];
+    return out.join(" → ");
+  }
+  var TOL = 4; // cents de tolerancia para considerar la cuerda afinada
+
+  var fmt1 = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var fmt2 = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem("afinador." + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("afinador." + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var a4 = Math.min(450, Math.max(430, Number(store.get("a4", 440)) || 440));
+  var soundMode = store.get("sound", "pluck") === "sustain" ? "sustain" : "pluck";
+  var auto = true, locked = null, listening = false;
+  var tuned = new Set();
+
+  function freqOf(i) { return a4 * Math.pow(2, (STRINGS[i].midi - 69) / 12); }
+  function cents(f, ref) { return 1200 * Math.log2(f / ref); }
+  function nearestIdx(f) {
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < STRINGS.length; i++) { var d = Math.abs(cents(f, freqOf(i))); if (d < bd) { bd = d; best = i; } }
+    return best;
+  }
+
+  /* ---------- Dial ---------- */
+  var NS = "http://www.w3.org/2000/svg", CX = 160, CY = 160;
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function pt(r, a) {
+    var rad = (a - 90) * Math.PI / 180;
+    return [(CX + r * Math.cos(rad)).toFixed(2), (CY + r * Math.sin(rad)).toFixed(2)];
+  }
+  function sector(r1, r2, a1, a2) {
+    var p1 = pt(r2, a1), p2 = pt(r2, a2), p3 = pt(r1, a2), p4 = pt(r1, a1);
+    return "M" + p1[0] + " " + p1[1] + "A" + r2 + " " + r2 + " 0 0 1 " + p2[0] + " " + p2[1] +
+           "L" + p3[0] + " " + p3[1] + "A" + r1 + " " + r1 + " 0 0 0 " + p4[0] + " " + p4[1] + "Z";
+  }
+  function buildDial() {
+    var ros = $("#rosette");
+    el("circle", { cx: CX, cy: CY, r: 150, "class": "ring-line" }, ros);
+    el("circle", { cx: CX, cy: CY, r: 146, "class": "ring-line thin" }, ros);
+    // Mosaico de la roseta: tres filas de teselas en diagonal, como un cordón
+    var rows = [[112, 121], [121, 131], [131, 141]];
+    var pat = [["ta","tc","tc","tw","tc","tc"], ["tc","ta","tc","tc","tw","tc"], ["tc","tc","ta","tc","tc","tw"]];
+    var n = 72, step = 360 / n;
+    rows.forEach(function (rr, ri) {
+      for (var i = 0; i < n; i++) el("path", { d: sector(rr[0], rr[1], i * step, (i + 1) * step), "class": "tile " + pat[ri][i % 6] }, ros);
+    });
+    el("circle", { cx: CX, cy: CY, r: 141.5, "class": "ring-line thin" }, ros);
+
+    var sc = $("#scale");
+    var z1 = pt(104, -TOL * 1.2), z2 = pt(104, TOL * 1.2);
+    el("path", { d: "M" + z1[0] + " " + z1[1] + "A104 104 0 0 1 " + z2[0] + " " + z2[1], "class": "zone" }, sc);
+    for (var c = -50; c <= 50; c += 5) {
+      var major = c % 25 === 0, a = c * 1.2;
+      var p1 = pt(major ? 85 : 91, a), p2 = pt(100, a);
+      el("line", { x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1], "class": major ? "tick major" : "tick" }, sc);
+    }
+    var f = pt(90, -73), s = pt(90, 73);
+    var tf = el("text", { x: f[0], y: f[1], "class": "sym", "text-anchor": "middle" }, sc); tf.textContent = "♭";
+    var ts = el("text", { x: s[0], y: s[1], "class": "sym", "text-anchor": "middle" }, sc); ts.textContent = "♯";
+  }
+
+  var dial = $("#dial"), needle = $("#needle"), noteName = $("#noteName"), noteSub = $("#noteSub");
+  var rHz = $("#rHz"), rCents = $("#rCents"), rTarget = $("#rTarget");
+  var statusEl = $("#status"), statusMain = $("#statusMain"), statusHint = $("#statusHint");
+  var micBtn = $("#micBtn"), micLabel = $("#micLabel"), micNote = $("#micNote");
+  var autoBtn = $("#autoBtn"), progress = $("#progress");
+  var meterFill = $("#meterFill"), meterLabel = $("#meterLabel");
+  function setMeterLabel(txt) { if (meterLabel.textContent !== txt) meterLabel.textContent = txt; }
+  // Si el navegador pausa el audio, cualquier toque en la pantalla lo reanuda
+  document.addEventListener("pointerdown", function () { if (ctx && ctx.state !== "running") ctx.resume().catch(function () {}); });
+
+  function setGauge(state) { dial.setAttribute("data-state", state); }
+  function setNeedle(c) {
+    var a = Math.max(-50, Math.min(50, c)) * 1.2;
+    needle.style.transform = "rotate(" + a.toFixed(2) + "deg)";
+  }
+  var statusKey = "";
+  function setStatus(tone, main, hint) {
+    var k = tone + "|" + main + "|" + hint;
+    if (k === statusKey) return;
+    statusKey = k;
+    statusEl.setAttribute("data-tone", tone);
+    statusMain.textContent = main;
+    statusHint.textContent = hint;
+  }
+  function showNote(i, sub) {
+    if (i == null) { noteName.textContent = "♪"; noteSub.textContent = sub || "toca una cuerda"; return; }
+    noteName.textContent = STRINGS[i].letter;
+    noteSub.textContent = sub || (STRINGS[i].name.toLowerCase() + " · " + STRINGS[i].n + "ª cuerda");
+  }
+  function clearReadout(targetIdx) {
+    rHz.textContent = "—"; rCents.textContent = "—";
+    rTarget.textContent = targetIdx == null ? "—" : fmt2.format(freqOf(targetIdx)) + " Hz";
+  }
+
+  /* ---------- Cuerdas ---------- */
+  var btns = [];
+  function buildStrings() {
+    var grid = $("#strings");
+    STRINGS.forEach(function (s, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "str" + (s.wound ? " wound" : "");
+      b.id = "str" + s.n;
+      b.setAttribute("aria-pressed", "false");
+      b.style.setProperty("--w", s.w + "px");
+      b.innerHTML = '<span class="wire" aria-hidden="true"></span><span class="num">' + s.n + 'ª</span>' +
+        '<span class="nm">' + s.letter + '</span><span class="sol">' + s.name.toLowerCase() + '</span><span class="hz"></span><span class="done" aria-hidden="true" hidden>✓</span>';
+      b.addEventListener("click", function () { onString(i); });
+      grid.appendChild(b);
+      btns.push(b);
+    });
+    updateHzLabels();
+  }
+  function updateHzLabels() {
+    btns.forEach(function (b, i) {
+      b.querySelector(".hz").textContent = fmt1.format(freqOf(i));
+      b.setAttribute("aria-label", STRINGS[i].n + "ª cuerda, " + STRINGS[i].letter + ", " + STRINGS[i].name + ", " + fmt1.format(freqOf(i)) + " hercios");
+    });
+  }
+  function syncStrings() {
+    btns.forEach(function (b, i) {
+      b.setAttribute("aria-pressed", String(!auto && locked === i));
+      b.classList.toggle("current", listening && curIdx === i);
+      b.querySelector(".done").hidden = !tuned.has(i);
+    });
+    autoBtn.setAttribute("aria-pressed", String(auto));
+    progress.textContent = "Afinadas: " + tuned.size + " de 6";
+  }
+
+  /* ---------- Sonido de referencia ---------- */
+  var ctx = null;
+  function getCtx() {
+    if (!ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state !== "running") ctx.resume().catch(function () {});
+    return ctx;
+  }
+
+  // En iPhone el interruptor de silencio corta el audio web; pedimos sesión de reproducción para que suene igual
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var silentEl = null;
+  function silentWav() {
+    var n = 800, bytes = new Uint8Array(44 + n), dv = new DataView(bytes.buffer), i;
+    function w(o, s) { for (var k = 0; k < s.length; k++) bytes[o + k] = s.charCodeAt(k); }
+    w(0, "RIFF"); dv.setUint32(4, 36 + n, true); w(8, "WAVE"); w(12, "fmt ");
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true);
+    w(36, "data"); dv.setUint32(40, n, true);
+    for (i = 0; i < n; i++) bytes[44 + i] = 128;
+    var bin = ""; for (i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return "data:audio/wav;base64," + btoa(bin);
+  }
+  function setSession(type) {
+    try { if (navigator.audioSession) { navigator.audioSession.type = type; return; } } catch (e) {}
+    if (!isIOS) return;
+    if (type !== "playback") { if (silentEl) silentEl.pause(); return; }
+    try {
+      if (!silentEl) { silentEl = new Audio(silentWav()); silentEl.loop = true; silentEl.setAttribute("playsinline", ""); }
+      var p = silentEl.play(); if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
+
+  // Cuerda pulsada con síntesis Karplus-Strong; el playbackRate corrige el redondeo para que la nota sea exacta
+  function pluck(freq) {
+    var c = getCtx(); if (!c) return;
+    var sr = c.sampleRate, dur = 3.6;
+    var N = Math.max(2, Math.round(sr / freq + 0.5));
+    var native = sr / (N - 0.5);
+    var len = Math.floor(sr * dur);
+    var buf = c.createBuffer(1, len, sr), out = buf.getChannelData(0);
+    var ring = new Float32Array(N), prev = 0, mean = 0, peak = 0, i;
+    for (i = 0; i < N; i++) { prev = 0.55 * prev + 0.45 * (Math.random() * 2 - 1); ring[i] = prev; mean += prev; }
+    mean /= N;
+    for (i = 0; i < N; i++) { ring[i] -= mean; peak = Math.max(peak, Math.abs(ring[i])); }
+    peak = peak || 1;
+    var g = Math.pow(0.001, 1 / (freq * 3));
+    for (i = 0; i < len; i++) {
+      var j = i % N, v = ring[j];
+      out[i] = v / peak;
+      ring[j] = g * 0.5 * (v + ring[(j + 1) % N]);
+    }
+    var src = c.createBufferSource(); src.buffer = buf; src.playbackRate.value = freq / native;
+    var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = Math.min(5000, freq * 24); lp.Q.value = 0.4;
+    var gain = c.createGain(), t = c.currentTime;
+    gain.gain.setValueAtTime(0.9, t);
+    gain.gain.setTargetAtTime(0, t + dur - 0.7, 0.18);
+    src.connect(lp); lp.connect(gain); gain.connect(c.destination);
+    src.start(t); src.stop(t + dur);
+  }
+
+  var wave = null, sus = null;
+  function getWave(c) {
+    if (wave) return wave;
+    var n = 20, re = new Float32Array(n + 1), im = new Float32Array(n + 1);
+    for (var k = 1; k <= n; k++) im[k] = (k % 2 ? 1 : 0.7) / Math.pow(k, 1.3);
+    wave = c.createPeriodicWave(re, im);
+    return wave;
+  }
+  function startSustain(i) {
+    var c = getCtx(); if (!c) return;
+    stopSustain();
+    var osc = c.createOscillator(); osc.setPeriodicWave(getWave(c)); osc.frequency.value = freqOf(i);
+    var g = c.createGain(), t = c.currentTime;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.32, t + 0.08);
+    osc.connect(g); g.connect(c.destination); osc.start(t);
+    sus = { osc: osc, g: g, idx: i };
+    btns[i].classList.add("playing");
+  }
+  function stopSustain() {
+    if (!sus) return;
+    var t = ctx.currentTime;
+    sus.g.gain.cancelScheduledValues(t);
+    sus.g.gain.setValueAtTime(sus.g.gain.value, t);
+    sus.g.gain.linearRampToValueAtTime(0, t + 0.12);
+    sus.osc.stop(t + 0.16);
+    btns[sus.idx].classList.remove("playing");
+    sus = null;
+  }
+  var playTimers = {};
+  function flashPlaying(i, ms) {
+    btns[i].classList.add("playing");
+    clearTimeout(playTimers[i]);
+    playTimers[i] = setTimeout(function () { if (!sus || sus.idx !== i) btns[i].classList.remove("playing"); }, ms);
+  }
+
+  function earStatus(i) {
+    setStatus("neutral", STRINGS[i].n + "ª cuerda: " + STRINGS[i].letter + " (" + STRINGS[i].name.toLowerCase() + ")",
+      "Toca tu cuerda a la vez. Si notas un vaivén en el sonido, gira la clavija hasta que desaparezca.");
+  }
+
+  function onString(i) {
+    locked = i; auto = false;
+    if (listening) {
+      curIdx = null; hist = []; sm = null;
+      showNote(i); clearReadout(i); syncStrings();
+      return;
+    }
+    setSession("playback");
+    if (soundMode === "sustain") {
+      if (sus && sus.idx === i) stopSustain(); else startSustain(i);
+    } else {
+      stopSustain(); pluck(freqOf(i)); flashPlaying(i, 1600);
+    }
+    showNote(i, STRINGS[i].name.toLowerCase() + " · referencia"); clearReadout(i); setGauge("idle"); setNeedle(0);
+    earStatus(i);
+    syncStrings();
+  }
+
+  /* ---------- Micrófono y detección de tono ---------- */
+  var inFrame = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+  var micBlocked = (function () {
+    try {
+      var pp = document.permissionsPolicy || document.featurePolicy;
+      if (pp && typeof pp.allowsFeature === "function") return !pp.allowsFeature("microphone");
+    } catch (e) {}
+    return false;
+  })();
+
+  var stream = null, srcNode = null, analyser = null, sinkNode = null, buf = null, raf = 0, wakeLock = null, silentSince = 0;
+  var lastRun = 0, lastHeard = 0, hist = [], sm = null, curIdx = null, tunedSince = 0, quietShown = false;
+
+  var NOTES = {
+    frame: "Desde este enlace el navegador no deja usar el micrófono. Puedes afinar de oído con las notas de referencia de abajo.",
+    insecure: "Este navegador no permite usar el micrófono en esta página. Ábrela desde una dirección https o con Chrome en un ordenador.",
+    denied: "No hay permiso para usar el micrófono. Actívalo en los ajustes del navegador para esta página y vuelve a probar.",
+    nodevice: "No encuentro ningún micrófono en este dispositivo."
+  };
+  function micUnavailable(kind) {
+    micNote.textContent = NOTES[kind];
+    micNote.hidden = false;
+    if (kind === "frame" || kind === "insecure") {
+      micBtn.disabled = true;
+      micLabel.textContent = "Micrófono no disponible";
+    } else {
+      micBtn.disabled = false;
+      micLabel.textContent = "Activar micrófono";
+    }
+    micBtn.setAttribute("aria-pressed", "false");
+    setMeterLabel("Micrófono no disponible");
+    setGauge("idle"); setNeedle(0);
+    setStatus("neutral", "Afina de oído", "Pulsa una cuerda de abajo para oír su nota y gira la clavija hasta que tu guitarra suene igual.");
+  }
+
+  // YIN: diferencia normalizada acumulada, umbral y refinado parabólico
+  var yinD = null;
+  function detect(x, sr) {
+    var W = 2048;
+    var tauMin = Math.floor(sr / 600), tauMax = Math.min(Math.floor(sr / 62), x.length - W - 1);
+    if (!yinD || yinD.length < tauMax + 2) yinD = new Float32Array(tauMax + 2);
+    var d = yinD, run = 0, tau, t;
+    d[0] = 1;
+    for (tau = 1; tau <= tauMax; tau++) {
+      var s = 0;
+      for (var i = 0; i < W; i++) { var v = x[i] - x[i + tau]; s += v * v; }
+      run += s;
+      d[tau] = run > 0 ? s * tau / run : 1;
+    }
+    var found = -1;
+    for (t = tauMin; t <= tauMax; t++) {
+      if (d[t] < 0.15) {
+        while (t + 1 <= tauMax && d[t + 1] < d[t]) t++;
+        found = t; break;
+      }
+    }
+    if (found < 0) return null;
+    var better = found;
+    if (found > 1 && found < tauMax) {
+      var a = d[found - 1], b = d[found], c = d[found + 1], den = a + c - 2 * b;
+      if (den !== 0) better = found + (a - c) / (2 * den);
+    }
+    return { freq: sr / better, conf: 1 - d[found] };
+  }
+  function median(arr) {
+    var s = arr.slice().sort(function (p, q) { return p - q; });
+    return s[s.length >> 1];
+  }
+
+  async function requestWake() { try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) { wakeLock = null; } }
+  function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+
+  async function startMic() {
+    var c = getCtx();
+    if (!c || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micUnavailable(inFrame ? "frame" : "insecure"); return; }
+    setSession("play-and-record");
+    micBtn.disabled = true;
+    setStatus("neutral", "Pidiendo permiso…", "Acepta el acceso al micrófono en el aviso del navegador.");
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      var name = e && e.name;
+      if (inFrame && (name === "NotAllowedError" || name === "SecurityError")) micUnavailable("frame");
+      else if (name === "NotFoundError" || name === "OverconstrainedError") micUnavailable("nodevice");
+      else micUnavailable("denied");
+      return;
+    }
+    stopSustain();
+    srcNode = c.createMediaStreamSource(stream);
+    var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 60;
+    var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400;
+    analyser = c.createAnalyser(); analyser.fftSize = 4096;
+    // Salida a volumen cero: algunos navegadores (Safari) no procesan el micro si el análisis no llega al altavoz
+    sinkNode = c.createGain(); sinkNode.gain.value = 0;
+    srcNode.connect(hp); hp.connect(lp); lp.connect(analyser); analyser.connect(sinkNode); sinkNode.connect(c.destination);
+    if (c.state !== "running") { try { await c.resume(); } catch (e) {} }
+    buf = new Float32Array(analyser.fftSize);
+    listening = true; hist = []; sm = null; curIdx = null; quietShown = false; lastHeard = 0; silentSince = 0;
+    micNote.hidden = true;
+    meterFill.style.width = "0%"; setMeterLabel("Nivel del micrófono");
+    micBtn.disabled = false;
+    micBtn.setAttribute("aria-pressed", "true");
+    micLabel.textContent = "Parar micrófono";
+    setGauge("listening"); setNeedle(0);
+    showNote(auto ? null : locked);
+    clearReadout(auto ? null : locked);
+    setStatus("neutral", "Escuchando…", "Toca una cuerda al aire cerca del micrófono.");
+    syncStrings();
+    requestWake();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function stopMic() {
+    cancelAnimationFrame(raf);
+    if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    if (srcNode) srcNode.disconnect();
+    if (sinkNode) sinkNode.disconnect();
+    stream = null; srcNode = null; analyser = null; sinkNode = null;
+    listening = false; curIdx = null;
+    meterFill.style.width = "0%"; setMeterLabel("Micrófono apagado");
+    releaseWake();
+    setSession(metroOn ? "playback" : "auto");
+    micBtn.setAttribute("aria-pressed", "false");
+    micLabel.textContent = "Activar micrófono";
+    setGauge("idle"); setNeedle(0);
+    showNote(auto ? null : locked); clearReadout(auto ? null : locked);
+    setStatus("neutral", "Toca una cuerda", "Activa el micrófono para ver la aguja, o pulsa una cuerda de abajo para oír su nota.");
+    syncStrings();
+  }
+
+  function goQuiet() {
+    quietShown = true; hist = []; sm = null; curIdx = null; tunedSince = 0;
+    setGauge("listening"); setNeedle(0);
+    showNote(auto ? null : locked); clearReadout(auto ? null : locked);
+    setStatus("neutral", "Escuchando…", "Toca una cuerda al aire cerca del micrófono.");
+    syncStrings();
+  }
+
+  function loop(t) {
+    raf = requestAnimationFrame(loop);
+    if (t - lastRun < 50) return;
+    lastRun = t;
+    analyser.getFloatTimeDomainData(buf);
+    var e = 0;
+    for (var i = 0; i < buf.length; i++) e += buf[i] * buf[i];
+    var rms = Math.sqrt(e / buf.length);
+    var lvl = Math.max(0, Math.min(1, (20 * Math.log10(rms + 1e-6) + 60) / 50));
+    meterFill.style.width = (lvl * 100).toFixed(1) + "%";
+    if (ctx.state !== "running") setMeterLabel("Audio en pausa: toca la pantalla");
+    else if (rms === 0) {
+      if (!silentSince) silentSince = t;
+      else if (t - silentSince > 2000) setMeterLabel("No llega sonido del micrófono");
+    } else { silentSince = 0; setMeterLabel("Nivel del micrófono"); }
+    var r = rms > 0.004 ? detect(buf, ctx.sampleRate) : null;
+    if (r && (r.freq < 60 || r.freq > 700)) r = null;
+    if (!r) {
+      if (rms > 0.01) {
+        if (t - lastHeard > 400) {
+          quietShown = false; hist = []; sm = null; curIdx = null; tunedSince = 0;
+          setGauge("listening"); setNeedle(0);
+          setStatus("neutral", "Oigo sonido, pero no una nota", "Los golpes y el ruido no tienen nota. Prueba a tararear «mmm» grave o toca una cuerda al aire.");
+        }
+        return;
+      }
+      if (!quietShown && t - lastHeard > 800) goQuiet();
+      return;
+    }
+    lastHeard = t; quietShown = false;
+    hist.push(r.freq); if (hist.length > 5) hist.shift();
+    show(median(hist), t);
+  }
+
+  function show(f, t) {
+    var idx, target, fx = f;
+    if (!auto && locked !== null) {
+      idx = locked; target = freqOf(idx);
+      var c0 = Math.abs(cents(fx, target));
+      if (c0 > 700) {
+        var down = Math.abs(cents(fx / 2, target)), up = Math.abs(cents(fx * 2, target));
+        if (down < c0 && down <= up) fx /= 2; else if (up < c0) fx *= 2;
+      }
+    } else {
+      idx = nearestIdx(fx); target = freqOf(idx);
+    }
+    var c = cents(fx, target);
+    if (idx !== curIdx) { curIdx = idx; sm = c; tunedSince = 0; syncStrings(); }
+    else sm += 0.3 * (c - sm);
+
+    var ac = Math.abs(sm), rc = Math.round(sm);
+    setNeedle(sm);
+    var s = STRINGS[idx];
+    var mr = Math.round(69 + 12 * Math.log2(fx / a4)), pc = ((mr % 12) + 12) % 12;
+    if (ac > 50) {
+      // Muy desafinada: enseñamos la letra que suena de verdad, como hace el afinador de clase
+      noteName.textContent = LET[pc];
+      noteSub.textContent = SOL[pc] + " · busca " + s.letter + " (" + s.n + "ª)";
+    } else showNote(idx);
+    rHz.textContent = fmt1.format(fx) + " Hz";
+    rCents.textContent = (rc > 0 ? "+" : rc < 0 ? "−" : "±") + Math.abs(rc) + " ct";
+    rTarget.textContent = fmt2.format(target) + " Hz";
+
+    if (ac <= TOL) {
+      setGauge("tuned");
+      setStatus("ok", "¡Afinada!", "Letra " + s.letter + " y aguja en el centro. Pasa a la siguiente cuerda.");
+      if (!tunedSince) tunedSince = t;
+      else if (t - tunedSince > 900 && !tuned.has(idx)) { tuned.add(idx); syncStrings(); }
+    } else {
+      tunedSince = 0;
+      setGauge("warn");
+      if (sm < -50) setStatus("warn", "Baja: tensa la cuerda", "Al tensar, la letra avanza: " + letterPath(mr, s.midi) + ".");
+      else if (sm < -25) setStatus("warn", "Baja: tensa la cuerda", "Gira la clavija un poco y vuelve a tocar.");
+      else if (sm < 0) setStatus("warn", "Casi, un poco baja", "Tensa muy poco.");
+      else if (sm <= 25) setStatus("warn", "Casi, un poco alta", "Suelta un poco y vuelve a tensar despacio hasta el centro.");
+      else if (sm <= 50) setStatus("warn", "Alta: suelta la cuerda", "Suelta por debajo de la nota y vuelve a subir despacio.");
+      else setStatus("warn", "Alta: suelta la cuerda", "Al soltar, la letra retrocede: " + letterPath(mr, s.midi) + ".");
+    }
+  }
+
+  /* ---------- Controles ---------- */
+  micBtn.addEventListener("click", function () { if (listening) stopMic(); else startMic(); });
+
+  autoBtn.addEventListener("click", function () {
+    auto = true; locked = null;
+    if (listening) { curIdx = null; hist = []; sm = null; showNote(null); clearReadout(null); }
+    syncStrings();
+  });
+
+  var sndPluck = $("#sndPluck"), sndSustain = $("#sndSustain");
+  function syncSound() {
+    sndPluck.setAttribute("aria-pressed", String(soundMode === "pluck"));
+    sndSustain.setAttribute("aria-pressed", String(soundMode === "sustain"));
+  }
+  sndPluck.addEventListener("click", function () { soundMode = "pluck"; stopSustain(); store.set("sound", soundMode); syncSound(); });
+  sndSustain.addEventListener("click", function () { soundMode = "sustain"; store.set("sound", soundMode); syncSound(); });
+
+  var a4Out = $("#a4Out"), a4Head = $("#a4Head"), a4Small = $("#a4Small");
+  function setA4(v) {
+    a4 = Math.min(450, Math.max(430, v));
+    store.set("a4", a4);
+    a4Out.textContent = a4 + " Hz"; a4Head.textContent = a4;
+    var off = a4 !== 440;
+    a4Small.textContent = off ? "Ojo: en clase se usa 440 Hz" : "Siempre a 440 Hz, como en clase";
+    a4Small.classList.toggle("warn", off);
+    $("#a4Reset").hidden = !off;
+    updateHzLabels();
+    tuned.clear(); syncStrings();
+    if (sus) sus.osc.frequency.setTargetAtTime(freqOf(sus.idx), ctx.currentTime, 0.02);
+    if (!listening && locked !== null) rTarget.textContent = fmt2.format(freqOf(locked)) + " Hz";
+  }
+  $("#a4Down").addEventListener("click", function () { setA4(a4 - 1); });
+  $("#a4Up").addEventListener("click", function () { setA4(a4 + 1); });
+  $("#a4Reset").addEventListener("click", function () { setA4(440); });
+
+  /* ---------- Metrónomo ---------- */
+  var bpm = Math.min(160, Math.max(40, Number(store.get("bpm", 60)) || 60));
+  var metroOn = false, nextTime = 0, beatNo = 0, schedTimer = 0, visQueue = [], visRaf = 0;
+  var beatEls = Array.prototype.slice.call(document.querySelectorAll("#beats span"));
+  var metroBtn = $("#metroBtn"), metroLabel = $("#metroLabel"), bpmOut = $("#bpmOut");
+  var bpmPresets = Array.prototype.slice.call(document.querySelectorAll("[data-bpm]"));
+  function tick(time, first) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.value = first ? 1500 : 1000;
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(first ? 0.9 : 0.55, time + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(time); o.stop(time + 0.07);
+  }
+  function scheduler() {
+    while (nextTime < ctx.currentTime + 0.12) {
+      tick(nextTime, beatNo === 0);
+      visQueue.push({ t: nextTime, b: beatNo });
+      nextTime += 60 / bpm;
+      beatNo = (beatNo + 1) % 4;
+    }
+  }
+  function drawBeats() {
+    if (!metroOn) return;
+    visRaf = requestAnimationFrame(drawBeats);
+    var now = ctx.currentTime, cur = null;
+    while (visQueue.length && visQueue[0].t <= now) cur = visQueue.shift();
+    if (cur) beatEls.forEach(function (e, k) { e.classList.toggle("on", k === cur.b); });
+  }
+  function startMetro() {
+    var c = getCtx(); if (!c) return;
+    if (!listening) setSession("playback");
+    metroOn = true; beatNo = 0; visQueue = []; nextTime = c.currentTime + 0.1;
+    scheduler();
+    schedTimer = setInterval(scheduler, 25);
+    visRaf = requestAnimationFrame(drawBeats);
+    metroBtn.setAttribute("aria-pressed", "true"); metroLabel.textContent = "Parar";
+    requestWake();
+  }
+  function stopMetro() {
+    metroOn = false; clearInterval(schedTimer); cancelAnimationFrame(visRaf);
+    beatEls.forEach(function (e) { e.classList.remove("on"); });
+    metroBtn.setAttribute("aria-pressed", "false"); metroLabel.textContent = "Empezar";
+    if (!listening) releaseWake();
+  }
+  function setBpm(v) {
+    bpm = Math.min(160, Math.max(40, v));
+    store.set("bpm", bpm);
+    bpmOut.textContent = bpm;
+    bpmPresets.forEach(function (b) { b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-bpm")) === bpm)); });
+  }
+  metroBtn.addEventListener("click", function () { if (metroOn) stopMetro(); else startMetro(); });
+  $("#bpmDown").addEventListener("click", function () { setBpm(bpm - 5); });
+  $("#bpmUp").addEventListener("click", function () { setBpm(bpm + 5); });
+  bpmPresets.forEach(function (b) { b.addEventListener("click", function () { setBpm(Number(b.getAttribute("data-bpm"))); }); });
+  setBpm(bpm);
+
+  /* ---------- Arranque ---------- */
+  buildDial();
+  buildStrings();
+  syncSound();
+  setA4(a4);
+  setNeedle(0);
+  if (micBlocked) micUnavailable(inFrame ? "frame" : "insecure");
+})();
+</script>
+
+</body></html>
