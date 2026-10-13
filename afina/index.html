@@ -1,0 +1,275 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Un afinador de guitarra sin nada más: una letra y un punto que busca el centro."><meta name="theme-color" content="#ECEAF3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#16141B" media="(prefers-color-scheme: dark)"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png" type="image/png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Afina"><meta name="apple-mobile-web-app-status-bar-style" content="default"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Afina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600&display=swap">
+<style>
+/* Layout: una pantalla, una letra y un punto que busca el centro; el fondo se templa al afinar */
+:root{
+  --far:#ECEAF3; --near:#F7E4D6; --ink:#2A2530; --soft:#8A8292; --line:#2A25301F; --glow:#E39E7E;
+  --font:"Nunito", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --far:#16141B; --near:#2C201C; --ink:#F2EDF4; --soft:#8E8698; --line:#F2EDF41F; --glow:#F2AE8F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --far:#16141B; --near:#2C201C; --ink:#F2EDF4; --soft:#8E8698; --line:#F2EDF41F; --glow:#F2AE8F;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+html{background:var(--far)}
+body{
+  --t:0;
+  margin:0; padding-inline:16px; overflow:hidden;
+  background-color:var(--far);
+  background-color:color-mix(in oklab, var(--near) calc(var(--t) * 100%), var(--far));
+  color:var(--ink); font-family:var(--font);
+  transition:background-color .7s ease;
+  -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;
+}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding-block:22px 26px;max-width:28rem;margin-inline:auto}
+.brand{margin:0;text-align:center;font-weight:600;font-size:.95rem;letter-spacing:.18em;color:var(--soft)}
+.stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:0}
+.letter{font-weight:300;font-size:clamp(7.5rem,38vw,12.5rem);line-height:1;min-height:1em;transition:color .4s ease,opacity .3s ease}
+.ord{font-size:.95rem;color:var(--soft);min-height:1.4em}
+.track{position:relative;width:min(72vw,300px);height:1px;background:var(--line);margin-top:34px}
+.notch{position:absolute;left:50%;top:-7px;width:1px;height:15px;background:var(--soft);opacity:.6}
+.dot{
+  position:absolute;left:50%;top:50%;width:14px;height:14px;border-radius:50%;
+  background:var(--ink);
+  transform:translate(calc(-50% + var(--x, 0px)), -50%) scale(var(--s, 1));
+  transition:transform .16s ease-out,background-color .35s ease,opacity .3s ease;
+}
+.hint{margin:26px 0 0;font-size:1.2rem;color:var(--soft);text-align:center;min-height:1.6em;transition:color .3s ease}
+
+/* Estados */
+.app[data-state="start"] .letter,.app[data-state="start"] .ord,.app[data-state="start"] .notch{opacity:0}
+.app[data-state="start"] .track{background:transparent}
+.app[data-state="start"] .dot{background:var(--glow);opacity:.35;animation:breathe 3.4s ease-in-out infinite}
+.app[data-state="idle"] .letter{color:var(--soft);opacity:.45}
+.app[data-state="idle"] .dot{opacity:.35}
+.app[data-state="tuned"] .dot{--s:1.55;background:var(--glow);animation:halo 1.6s ease-out infinite}
+.app[data-state="tuned"] .hint{color:var(--ink)}
+@keyframes breathe{
+  0%,100%{transform:translate(-50%,-50%) scale(4.2)}
+  50%{transform:translate(-50%,-50%) scale(5)}
+}
+@keyframes halo{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--glow) 55%, transparent)}
+  100%{box-shadow:0 0 0 16px transparent}
+}
+
+.strings{list-style:none;margin:0;padding:0;display:flex;justify-content:center;gap:clamp(14px,5vw,24px)}
+.strings li{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.95rem;color:var(--soft);transition:color .3s ease}
+.strings li::after{content:"";width:7px;height:7px;border-radius:50%;border:1px solid var(--soft);transition:background-color .4s ease,border-color .4s ease,transform .4s ease}
+.strings li.cur{color:var(--ink)}
+.strings li.done::after{background:var(--glow);border-color:var(--glow);transform:scale(1.25)}
+.again{display:block;margin:14px auto 0;border:0;background:none;color:var(--soft);font:inherit;font-size:.9rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+.start{position:fixed;inset:0;width:100%;height:100%;border:0;background:transparent;cursor:pointer;z-index:2}
+:focus-visible{outline:2px solid var(--glow);outline-offset:4px}
+.start:focus-visible{outline-offset:-8px;border-radius:24px}
+
+@media (prefers-reduced-motion: reduce){
+  .app[data-state="start"] .dot{animation:none;transform:translate(-50%,-50%) scale(4.5)}
+  .app[data-state="tuned"] .dot{animation:none}
+  .dot,body{transition:none}
+}
+</style>
+
+<main class="app" id="app" data-state="start">
+  <p class="brand">afina</p>
+  <div class="stage">
+    <div class="letter" id="letter" aria-live="polite"></div>
+    <div class="ord" id="ord"></div>
+    <div class="track" id="track" aria-hidden="true"><span class="notch"></span><span class="dot" id="dot"></span></div>
+    <p class="hint" id="hint">toca para afinar</p>
+  </div>
+  <div>
+    <ol class="strings" id="strings" aria-label="Cuerdas afinadas"></ol>
+    <button class="again" id="again" type="button" hidden>otra vez</button>
+  </div>
+  <button class="start" id="start" type="button" aria-label="Empezar a afinar"></button>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var S = [
+    { n: 6, l: "E", m: 40 }, { n: 5, l: "A", m: 45 }, { n: 4, l: "D", m: 50 },
+    { n: 3, l: "G", m: 55 }, { n: 2, l: "B", m: 59 }, { n: 1, l: "E", m: 64 }
+  ];
+  var A4 = 440, TOL = 4;
+  function fq(i) { return A4 * Math.pow(2, (S[i].m - 69) / 12); }
+  function cents(f, r) { return 1200 * Math.log2(f / r); }
+  function nearest(f) {
+    var b = 0, bd = Infinity;
+    for (var i = 0; i < S.length; i++) { var d = Math.abs(cents(f, fq(i))); if (d < bd) { bd = d; b = i; } }
+    return b;
+  }
+
+  var app = $("#app"), letter = $("#letter"), ord = $("#ord"), dot = $("#dot"), track = $("#track");
+  var hint = $("#hint"), startBtn = $("#start"), again = $("#again"), list = $("#strings");
+  var lis = S.map(function (s) {
+    var li = document.createElement("li"); li.textContent = s.l;
+    li.setAttribute("aria-label", s.n + "ª cuerda, " + s.l);
+    list.appendChild(li); return li;
+  });
+
+  var inFrame = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+  var ctx = null, stream = null, buf = null, an = null, raf = 0, wake = null;
+  var hist = [], sm = null, cur = null, since = 0, lastHeard = 0, lastRun = 0, muteUntil = 0, idleShown = false;
+  var done = new Set();
+
+  function setState(s) { if (app.dataset.state !== s) app.dataset.state = s; }
+  function setHint(s) { if (hint.textContent !== s) hint.textContent = s; }
+  function setWarm(t) { document.body.style.setProperty("--t", t.toFixed(3)); }
+  function setX(px) { dot.style.setProperty("--x", px.toFixed(1) + "px"); }
+
+  // YIN: diferencia normalizada acumulada, umbral y refinado parabólico
+  var yd = null;
+  function detect(x, sr) {
+    var W = 2048, tauMin = Math.floor(sr / 600), tauMax = Math.min(Math.floor(sr / 62), x.length - W - 1);
+    if (!yd || yd.length < tauMax + 2) yd = new Float32Array(tauMax + 2);
+    var d = yd, run = 0, tau, t;
+    d[0] = 1;
+    for (tau = 1; tau <= tauMax; tau++) {
+      var s = 0;
+      for (var i = 0; i < W; i++) { var v = x[i] - x[i + tau]; s += v * v; }
+      run += s; d[tau] = run > 0 ? s * tau / run : 1;
+    }
+    var f = -1;
+    for (t = tauMin; t <= tauMax; t++) {
+      if (d[t] < 0.15) { while (t + 1 <= tauMax && d[t + 1] < d[t]) t++; f = t; break; }
+    }
+    if (f < 0) return null;
+    var b = f;
+    if (f > 1 && f < tauMax) { var p = d[f - 1], q = d[f], r = d[f + 1], den = p + r - 2 * q; if (den !== 0) b = f + (p - r) / (2 * den); }
+    return sr / b;
+  }
+  function median(a) { var s = a.slice().sort(function (p, q) { return p - q; }); return s[s.length >> 1]; }
+
+  function chime() {
+    if (!ctx) return;
+    var t = ctx.currentTime;
+    [659.25, 987.77].forEach(function (f, k) {
+      var o = ctx.createOscillator(), g = ctx.createGain(), s = t + k * 0.09;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.exponentialRampToValueAtTime(0.07, s + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, s + 0.9);
+      o.connect(g); g.connect(ctx.destination); o.start(s); o.stop(s + 1);
+    });
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+  }
+
+  function syncList() {
+    lis.forEach(function (li, i) {
+      li.classList.toggle("done", done.has(i));
+      li.classList.toggle("cur", cur === i);
+    });
+    again.hidden = done.size < 6;
+  }
+
+  function idle() {
+    idleShown = true; hist = []; sm = null; cur = null; since = 0;
+    setState("idle"); setX(0); setWarm(done.size === 6 ? 0.55 : 0);
+    ord.textContent = "";
+    setHint(done.size === 6 ? "todo afinado ♡" : "toca una cuerda");
+    syncList();
+  }
+
+  function show(f, now) {
+    var i = nearest(f), c = cents(f, fq(i));
+    if (i !== cur) { cur = i; sm = c; since = 0; syncList(); } else sm += 0.3 * (c - sm);
+    var ac = Math.abs(sm), half = track.getBoundingClientRect().width / 2;
+    letter.textContent = S[i].l;
+    ord.textContent = S[i].n + "ª cuerda";
+    if (ac <= TOL) {
+      setState("tuned"); setX(0); setWarm(1);
+      setHint("perfecta");
+      if (!since) since = now;
+      else if (now - since > 700 && !done.has(i)) {
+        done.add(i); syncList(); chime(); muteUntil = now + 1100;
+      }
+    } else {
+      since = 0;
+      setState("listening");
+      setX(Math.max(-1, Math.min(1, sm / 50)) * half);
+      setWarm(Math.max(0, 1 - ac / 50) * 0.4);
+      setHint(sm < -25 ? "tensa" : sm < 0 ? "tensa un poquito" : sm <= 25 ? "suelta un poquito" : "suelta");
+    }
+  }
+
+  function loop(now) {
+    raf = requestAnimationFrame(loop);
+    if (now - lastRun < 50) return;
+    lastRun = now;
+    if (now < muteUntil) return;
+    an.getFloatTimeDomainData(buf);
+    var e = 0;
+    for (var i = 0; i < buf.length; i++) e += buf[i] * buf[i];
+    var f = Math.sqrt(e / buf.length) > 0.004 ? detect(buf, ctx.sampleRate) : null;
+    if (f && (f < 60 || f > 700)) f = null;
+    if (!f) { if (!idleShown && now - lastHeard > 900) idle(); return; }
+    lastHeard = now; idleShown = false;
+    hist.push(f); if (hist.length > 5) hist.shift();
+    show(median(hist), now);
+  }
+
+  function fail(msg) {
+    setState("start");
+    setHint(msg);
+    startBtn.hidden = false;
+  }
+
+  async function start() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      fail(inFrame ? "ábrela desde su enlace para que pueda escucharte" : "este navegador no deja usar el micrófono");
+      return;
+    }
+    if (!ctx) ctx = new AC();
+    try { if (navigator.audioSession) navigator.audioSession.type = "play-and-record"; } catch (e) {}
+    startBtn.hidden = true;
+    setHint("un segundo…");
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      var name = e && e.name;
+      fail(inFrame && (name === "NotAllowedError" || name === "SecurityError")
+        ? "ábrela desde su enlace para que pueda escucharte"
+        : name === "NotFoundError" ? "no encuentro el micrófono" : "necesito permiso para el micrófono");
+      return;
+    }
+    var src = ctx.createMediaStreamSource(stream);
+    var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 60;
+    var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400;
+    an = ctx.createAnalyser(); an.fftSize = 4096;
+    var sink = ctx.createGain(); sink.gain.value = 0;
+    src.connect(hp); hp.connect(lp); lp.connect(an); an.connect(sink); sink.connect(ctx.destination);
+    if (ctx.state !== "running") { try { await ctx.resume(); } catch (e) {} }
+    buf = new Float32Array(an.fftSize);
+    try { if ("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+    idle();
+    raf = requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener("click", start);
+  again.addEventListener("click", function () { done.clear(); idle(); });
+  document.addEventListener("pointerdown", function () { if (ctx && ctx.state !== "running") ctx.resume().catch(function () {}); });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && stream && "wakeLock" in navigator) {
+      navigator.wakeLock.request("screen").then(function (w) { wake = w; }).catch(function () {});
+    }
+  });
+  syncList();
+})();
+</script>
+
+</body></html>

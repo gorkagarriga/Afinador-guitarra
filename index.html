@@ -88,6 +88,11 @@ h2{margin:0;font:700 1.4rem/1.2 var(--f-display);text-wrap:balance}
 #dial[data-state="tuned"] .needle-line{stroke:var(--ok-hole)}
 #dial[data-state="tuned"] .note{fill:var(--ok-hole)}
 #dial[data-state="warn"] .needle-line{stroke:var(--warn-hole)}
+/* Destello que recorre la roseta al afinar una cuerda, y aro que respira con el sonido */
+#dial .sweep{fill:none;stroke:var(--ok-hole);stroke-width:30;opacity:0;stroke-dasharray:0 100;transform-box:view-box;transform-origin:160px 160px;transform:rotate(-90deg);pointer-events:none}
+#dial .sweep.go{animation:sweep 1.2s cubic-bezier(.3,.7,.3,1)}
+@keyframes sweep{0%{stroke-dasharray:0 100;opacity:.55}70%{stroke-dasharray:100 0;opacity:.35}100%{stroke-dasharray:100 0;opacity:0}}
+#dial .breath{fill:none;stroke:var(--hole-ink);stroke-width:2;opacity:0;transition:opacity .12s linear}
 
 .readout{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0;text-align:center}
 .readout div{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -387,6 +392,14 @@ footer{margin:0;font-size:.85rem;color:var(--muted)}
     return "M" + p1[0] + " " + p1[1] + "A" + r2 + " " + r2 + " 0 0 1 " + p2[0] + " " + p2[1] +
            "L" + p3[0] + " " + p3[1] + "A" + r1 + " " + r1 + " 0 0 0 " + p4[0] + " " + p4[1] + "Z";
   }
+  var sweepEl = null, breathEl = null;
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function celebrate() {
+    if (!sweepEl || reduceMotion) return;
+    sweepEl.classList.remove("go");
+    void sweepEl.getBoundingClientRect();
+    sweepEl.classList.add("go");
+  }
   function buildDial() {
     var ros = $("#rosette");
     el("circle", { cx: CX, cy: CY, r: 150, "class": "ring-line" }, ros);
@@ -399,8 +412,10 @@ footer{margin:0;font-size:.85rem;color:var(--muted)}
       for (var i = 0; i < n; i++) el("path", { d: sector(rr[0], rr[1], i * step, (i + 1) * step), "class": "tile " + pat[ri][i % 6] }, ros);
     });
     el("circle", { cx: CX, cy: CY, r: 141.5, "class": "ring-line thin" }, ros);
+    sweepEl = el("circle", { cx: CX, cy: CY, r: 126, pathLength: 100, "class": "sweep" }, ros);
 
     var sc = $("#scale");
+    breathEl = el("circle", { cx: CX, cy: CY, r: 107, "class": "breath" }, sc);
     var z1 = pt(104, -TOL * 1.2), z2 = pt(104, TOL * 1.2);
     el("path", { d: "M" + z1[0] + " " + z1[1] + "A104 104 0 0 1 " + z2[0] + " " + z2[1], "class": "zone" }, sc);
     for (var c = -50; c <= 50; c += 5) {
@@ -724,6 +739,7 @@ footer{margin:0;font-size:.85rem;color:var(--muted)}
     stream = null; srcNode = null; analyser = null; sinkNode = null;
     listening = false; curIdx = null;
     meterFill.style.width = "0%"; setMeterLabel("Micrófono apagado");
+    if (breathEl) breathEl.style.opacity = 0;
     releaseWake();
     setSession(metroOn ? "playback" : "auto");
     micBtn.setAttribute("aria-pressed", "false");
@@ -752,6 +768,7 @@ footer{margin:0;font-size:.85rem;color:var(--muted)}
     var rms = Math.sqrt(e / buf.length);
     var lvl = Math.max(0, Math.min(1, (20 * Math.log10(rms + 1e-6) + 60) / 50));
     meterFill.style.width = (lvl * 100).toFixed(1) + "%";
+    if (breathEl) breathEl.style.opacity = (lvl * 0.45).toFixed(3);
     if (ctx.state !== "running") setMeterLabel("Audio en pausa: toca la pantalla");
     else if (rms === 0) {
       if (!silentSince) silentSince = t;
@@ -809,7 +826,7 @@ footer{margin:0;font-size:.85rem;color:var(--muted)}
       setGauge("tuned");
       setStatus("ok", "¡Afinada!", "Letra " + s.letter + " y aguja en el centro. Pasa a la siguiente cuerda.");
       if (!tunedSince) tunedSince = t;
-      else if (t - tunedSince > 900 && !tuned.has(idx)) { tuned.add(idx); syncStrings(); }
+      else if (t - tunedSince > 900 && !tuned.has(idx)) { tuned.add(idx); syncStrings(); celebrate(); }
     } else {
       tunedSince = 0;
       setGauge("warn");
