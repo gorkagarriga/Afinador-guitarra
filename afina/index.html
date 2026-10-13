@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Un afinador de guitarra sin nada más: una letra y un punto que busca el centro."><meta name="theme-color" content="#ECEAF3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#16141B" media="(prefers-color-scheme: dark)"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png" type="image/png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Afina"><meta name="apple-mobile-web-app-status-bar-style" content="default"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Un afinador de guitarra sin nada más: una letra y un punto que busca el centro."><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png" type="image/png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Afina"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#ECEAF3" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#16141B" media="(prefers-color-scheme: dark)"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>Afina</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +33,9 @@ body{
 }
 .app{height:100%;display:grid;grid-template-rows:auto 1fr auto;padding-block:22px 26px;max-width:28rem;margin-inline:auto}
 .brand{margin:0;text-align:center;font-weight:600;font-size:.95rem;letter-spacing:.18em;color:var(--soft)}
+.nav{display:flex;justify-content:center;gap:20px;font-weight:600;font-size:.92rem;letter-spacing:.16em}
+.nav a{color:var(--soft);text-decoration:none;padding:6px 2px}
+.nav a[aria-current="page"]{color:var(--ink)}
 .top{position:relative;z-index:3;display:grid;grid-template-columns:40px 1fr 40px;align-items:center}
 .icon-btn{width:40px;height:40px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--soft);display:grid;place-items:center;font:600 1.05rem/1 var(--font);cursor:pointer;transition:color .2s,border-color .2s}
 .icon-btn:active{color:var(--ink);border-color:var(--soft)}
@@ -100,7 +103,10 @@ body{
 <main class="app" id="app" data-state="start">
   <div class="top">
     <button class="icon-btn" id="infoBtn" type="button" aria-label="Cómo funciona">i</button>
-    <p class="brand">afina</p>
+    <nav class="nav" aria-label="Cambiar de afinador">
+      <a href="https://gorkagarriga.github.io/Afinador-guitarra/afina/" aria-current="page">afina</a>
+      <a href="https://gorkagarriga.github.io/Afinador-guitarra/">completo</a>
+    </nav>
     <button class="icon-btn" id="shareBtn" type="button" aria-label="Compartir Afina">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v6.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V12"></path></svg>
     </button>
@@ -129,6 +135,7 @@ body{
   </ol>
   <p>las letras de abajo son las seis cuerdas, de la más gruesa a la más fina: E A D G B E. se marcan al afinarlas.</p>
   <p>el sonido se escucha en tu móvil y no se guarda ni se envía a ningún sitio.</p>
+  <p>¿quieres oír la nota de cada cuerda, un metrónomo o más ayuda? están en «completo», arriba.</p>
   <button class="close" id="infoClose" type="button">vale</button>
 </dialog>
 
